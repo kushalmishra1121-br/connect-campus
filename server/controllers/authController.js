@@ -27,10 +27,12 @@ exports.register = async (req, res) => {
             }
         }
 
-        // Check if user exists
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'Email already exists' });
+        // Check if student_id exists (if provided)
+        if (student_id) {
+            const existingStudentId = await prisma.user.findUnique({ where: { student_id } });
+            if (existingStudentId) {
+                return res.status(400).json({ success: false, message: 'Student ID already registered' });
+            }
         }
 
         // Hash password
@@ -65,6 +67,16 @@ exports.register = async (req, res) => {
 
     } catch (error) {
         console.error('Register Error:', error);
+
+        // Handle Prisma Unique Constraint Error
+        if (error.code === 'P2002') {
+            const field = error.meta?.target?.[0];
+            return res.status(400).json({
+                success: false,
+                message: `${field ? field.replace('_', ' ') : 'Field'} already exists`
+            });
+        }
+
         res.status(500).json({ success: false, message: 'Server error during registration' });
     }
 };
@@ -127,6 +139,100 @@ exports.getMe = async (req, res) => {
             }
         });
     } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+const crypto = require('crypto');
+const emailService = require('../utils/emailService');
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Generate 6-digit code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Hash code for storage
+        const resetTokenHash = crypto.createHash('sha256').update(resetCode).digest('hex');
+
+        // Expires in 10 minutes
+        const resetTokenExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                reset_token: resetTokenHash,
+                reset_token_expires: resetTokenExpires
+            }
+        });
+
+        // Send Email
+        const message = `
+            <h1>Password Reset Request</h1>
+            <p>You requested a password reset. Your verification code is:</p>
+            <h2 style="color: #4F46E5; letter-spacing: 5px;">${resetCode}</h2>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you did not request this, please ignore this email.</p>
+        `;
+
+        await emailService.sendEmail({
+            to: user.email,
+            subject: 'Password Reset Code - STITCH Test',
+            html: message
+        });
+
+        res.json({ success: true, message: 'Reset code sent to email' });
+
+    } catch (error) {
+        console.error('Forgot Password Error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.reset_token || !user.reset_token_expires) {
+            return res.status(400).json({ success: false, message: 'Invalid request or expired token' });
+        }
+
+        // Verify Expiry
+        if (new Date() > user.reset_token_expires) {
+            return res.status(400).json({ success: false, message: 'Code expired' });
+        }
+
+        // Verify Code
+        const resetTokenHash = crypto.createHash('sha256').update(code).digest('hex');
+        if (resetTokenHash !== user.reset_token) {
+            return res.status(400).json({ success: false, message: 'Invalid verification code' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(newPassword, salt);
+
+        // Update User
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password_hash: password_hash,
+                reset_token: null,
+                reset_token_expires: null
+            }
+        });
+
+        res.json({ success: true, message: 'Password reset successfully' });
+
+    } catch (error) {
+        console.error('Reset Password Error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

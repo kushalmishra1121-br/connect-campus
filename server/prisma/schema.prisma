@@ -18,6 +18,8 @@ model User {
   is_active     Boolean        @default(true)
   created_at    DateTime       @default(now())
   updated_at    DateTime       @default(now()) @updatedAt
+  reset_token      String?
+  reset_token_expires DateTime?
   
   // Relations
   reported_issues Issue[]        @relation("ReportedIssues")
