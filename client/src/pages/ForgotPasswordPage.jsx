@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, key, ArrowRight, AlertCircle, CheckCircle, Key } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle, Key } from 'lucide-react';
 import axios from 'axios';
 
 const ForgotPasswordPage = () => {
