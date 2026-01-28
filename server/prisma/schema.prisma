@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password_hash String
+  full_name     String
+  student_id    String?        @unique
+  role          UserRole
+  avatar_url    String?
+  is_active     Boolean        @default(true)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @default(now()) @updatedAt
+  
+  // Relations
+  reported_issues Issue[]        @relation("ReportedIssues")
+  assigned_issues Issue[]        @relation("AssignedIssues")
+  issue_updates   IssueUpdate[]
+  uploaded_files  Attachment[]
+  notifications   Notification[]
+  default_for     Category[]
+
+  @@map("users")
+}
+
+model Category {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  description      String?
+  department_email String?
+  default_assignee_id Int?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+
+  // Relations
+  default_assignee User?    @relation(fields: [default_assignee_id], references: [id])
+  issues           Issue[]
+
+  @@map("categories")
+}
+
+model Issue {
+  id           Int       @id @default(autoincrement())
+  issue_number String    @unique // Format: #4022
+  title        String
+  description  String
+  location     String
+  category_id  Int
+  priority     Priority  @default(medium)
+  status       Status    @default(submitted)
+  created_by   Int
+  assigned_to  Int?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @default(now()) @updatedAt
+  resolved_at  DateTime?
+  closed_at    DateTime?
+
+  // Relations
+  category      Category      @relation(fields: [category_id], references: [id])
+  creator       User          @relation("ReportedIssues", fields: [created_by], references: [id])
+  assignee      User?         @relation("AssignedIssues", fields: [assigned_to], references: [id])
+  updates       IssueUpdate[]
+  attachments   Attachment[]
+  notifications Notification[]
+
+  @@map("issues")
+}
+
+model IssueUpdate {
+  id         Int      @id @default(autoincrement())
+  issue_id   Int
+  old_status String?
+  new_status String
+  comment    String?
+  updated_by Int
+  created_at DateTime @default(now())
+
+  // Relations
+  issue   Issue @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+  updater User  @relation(fields: [updated_by], references: [id])
+
+  @@map("issue_updates")
+}
+
+model Attachment {
+  id          Int      @id @default(autoincrement())
+  issue_id    Int
+  file_name   String
+  file_url    String
+  file_size   Int
+  mime_type   String
+  uploaded_by Int
+  created_at  DateTime @default(now())
+
+  // Relations
+  issue    Issue @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+  uploader User  @relation(fields: [uploaded_by], references: [id])
+
+  @@map("attachments")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  issue_id   Int?
+  type       String
+  title      String
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  // Relations
+  user  User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  issue Issue? @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum UserRole {
+  student
+  admin
+  staff
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum Status {
+  submitted
+  in_review
+  in_progress
+  resolved
+  closed
+}

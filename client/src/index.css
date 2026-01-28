@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #020617;
+  /* Slate 950 */
+  color: #f8fafc;
+  /* Slate 50 */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-glass;
+  }
+
+  .glass-input {
+    @apply bg-white/5 border border-white/10 text-white placeholder-text-tertiary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all duration-300;
+  }
+
+  .glass-button {
+    @apply bg-primary hover:bg-primary-hover text-white font-medium shadow-glow-primary transition-all duration-300 active:scale-95;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-light to-secondary-light;
+  }
+}
+
+/* Custom Scrollbar for Dark Mode */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
