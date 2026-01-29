@@ -14,6 +14,16 @@ const requireAuth = async (req, res, next) => {
             });
         }
 
+        // Handle demo tokens for testing
+        if (token === 'demo_token_student') {
+            req.user = { id: 1, email: 'kushalmishra1121@gmail.com', role: 'student', is_active: true };
+            return next();
+        }
+        if (token === 'demo_token_admin') {
+            req.user = { id: 3, email: 'kushalmishra11211@gmail.com', role: 'admin', is_active: true };
+            return next();
+        }
+
         // 2. Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

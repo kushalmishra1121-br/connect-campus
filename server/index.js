@@ -75,9 +75,27 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Start Server
+process.on('exit', (code) => console.log('Process exit', code));
+process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err));
+process.on('unhandledRejection', (reason, p) => console.error('Unhandled Rejection:', reason));
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} already in use. Stop the process using it or set a different PORT.`);
+        process.exit(1);
+    }
+    console.error(err);
+});
+
+server.on('listening', () => {
+    const addr = server.address();
+    console.log(`Listening on ${addr.address}:${addr.port}`);
+});
+
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`API URL: http://localhost:${PORT}`);
+    console.log('STITCH API is running');
 });
 
 module.exports = app;

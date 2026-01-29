@@ -1,19 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { GraduationCap, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 
 const LoginPage = () => {
-    const [loginRole, setLoginRole] = useState('student'); // 'student' or 'admin'
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [loginRole, setLoginRole] = useState('student');
     const [loading, setLoading] = useState(false);
-    const { login, logout, user } = useAuth(); // Need user to check if already logged in
+    const { demoLogin, user } = useAuth();
     const navigate = useNavigate();
 
     // Redirect if already logged in
-    // This handles cases where user refreshes or manually visits /login
     if (user) {
         if (user.role === 'admin') {
             navigate('/admin');
@@ -22,40 +18,20 @@ const LoginPage = () => {
         }
     }
 
-    const handleSubmit = async (e) => {
+    const handleDemoLogin = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
-        try {
-            const data = await login(email, password);
 
-            // Enforce Role Check
-            if (loginRole === 'admin' && data.user.role !== 'admin') {
-                logout(); // Clear token immediately
-                setError('Access Denied: This account does not have administrator privileges.');
-                return;
-            }
+        // Demo login - no credentials needed
+        demoLogin(loginRole);
 
-            // Optional: Prevent admins from logging in as students if desired, 
-            // but usually admins can do anything. For clarity, let's allow it or warn.
-            // Let's enforce strict login to avoid confusion.
-            if (loginRole === 'student' && data.user.role === 'admin') {
-                // Technically an admin is a user too, but let's redirect them to admin dashboard anyway
-                // OR tell them to use Admin login.
-                // For smooth UX, let's just allow it but redirect to admin dashboard if they are actually admin.
-            }
-
-            if (data.user.role === 'admin') {
+        setTimeout(() => {
+            if (loginRole === 'admin') {
                 navigate('/admin');
             } else {
                 navigate('/dashboard');
             }
-
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to login');
-        } finally {
-            setLoading(false);
-        }
+        }, 500);
     };
 
     return (
@@ -96,70 +72,27 @@ const LoginPage = () => {
                     </p>
                 </div>
 
-                {error && (
-                    <div className="bg-status-error/10 border border-status-error/30 text-status-error p-3 rounded-lg mb-6 flex items-center gap-2 text-sm shadow-sm backdrop-blur-sm">
-                        <AlertCircle size={16} />
-                        {error}
-                    </div>
-                )}
+                {/* Demo Mode Banner */}
+                <div className="bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald p-3 rounded-lg mb-6 flex items-center gap-2 text-sm backdrop-blur-sm">
+                    <Sparkles size={16} />
+                    <span>Demo Mode: Click below to enter instantly!</span>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail className="h-5 w-5 text-text-tertiary group-focus-within:text-primary transition-colors" />
-                            </div>
-                            <input
-                                type="email"
-                                className="glass-input w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-primary/50 transition-all"
-                                placeholder={loginRole === 'admin' ? "admin@stitch.edu" : "student@uni.edu"}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-medium text-text-secondary">Password</label>
-                            <Link to="/forgot-password" className="text-xs text-primary-light hover:text-primary hover:underline transition-colors">Forgot password?</Link>
-                        </div>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-text-tertiary group-focus-within:text-primary transition-colors" />
-                            </div>
-                            <input
-                                type="password"
-                                className="glass-input w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-primary/50 transition-all"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-
+                <form onSubmit={handleDemoLogin}>
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 group transition-all duration-300 font-medium text-white shadow-lg ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'
+                        className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 group transition-all duration-300 font-medium text-white shadow-lg text-lg ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'
                             } ${loginRole === 'admin' ? 'bg-accent-purple hover:bg-accent-purple/90 shadow-accent-purple/20' : 'bg-primary hover:bg-primary-hover shadow-primary/20'}`}
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
-                        {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                        {loading ? 'Entering...' : `Enter as ${loginRole === 'admin' ? 'Admin' : 'Student'}`}
+                        {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
-                {loginRole === 'student' && (
-                    <div className="mt-8 text-center text-sm text-text-secondary">
-                        Don't have an account?{' '}
-                        <Link to="/register" className="text-primary-light font-medium hover:text-white transition-colors">
-                            Create Account
-                        </Link>
-                    </div>
-                )}
+                <div className="mt-6 text-center text-xs text-text-tertiary">
+                    This is a demo version. No credentials required.
+                </div>
             </div>
         </div>
     );
