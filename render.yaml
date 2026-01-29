@@ -1,0 +1,19 @@
+# Render Blueprint - Auto-configures the backend service
+services:
+  - type: web
+    name: campus-connect-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npx prisma generate && npx prisma db push
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: campus_connect_secret_key_2024
+      - key: ADMIN_SECRET
+        value: admin123
+      - key: DATABASE_URL
+        sync: false  # You'll add this manually in Render dashboard
