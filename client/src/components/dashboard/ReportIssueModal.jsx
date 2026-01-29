@@ -24,13 +24,23 @@ const ReportIssueModal = ({ isOpen, onClose, onSuccess }) => {
     }, [isOpen]);
 
     const fetchCategories = async () => {
+        const defaultCategories = [
+            { id: 1, name: 'Infrastructure', description: 'Buildings, roads, facilities' },
+            { id: 2, name: 'IT Services', description: 'WiFi, computers, software' },
+            { id: 3, name: 'Hostel', description: 'Hostel related issues' },
+            { id: 4, name: 'Academic', description: 'Classrooms, labs, library' },
+            { id: 5, name: 'Cafeteria', description: 'Food and dining services' },
+            { id: 6, name: 'Security', description: 'Safety and security concerns' },
+            { id: 7, name: 'Other', description: 'Other issues' }
+        ];
+
         try {
             setLoading(true);
             const res = await api.get('/categories');
-            setCategories(res.data);
+            setCategories(res.data && res.data.length > 0 ? res.data : defaultCategories);
         } catch (err) {
-            console.error('Failed to fetch categories', err);
-            setError('Failed to load categories. Please try again.');
+            console.error('Failed to fetch categories, using defaults', err);
+            setCategories(defaultCategories);
         } finally {
             setLoading(false);
         }
