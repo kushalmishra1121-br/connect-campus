@@ -49,15 +49,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: true,  // Allow all origins for demo
     credentials: true
 }));
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan('dev'));
 
-// API Routes
+// API Routes - with /api prefix (for local dev)
 app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
+
+// API Routes - without /api prefix (for Vercel - it strips /api from path)
+app.use('/auth', authRoutes);
+app.use('/', apiRoutes);
 
 // Test Route
 app.get('/', (req, res) => {
