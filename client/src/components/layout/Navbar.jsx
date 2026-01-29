@@ -56,11 +56,16 @@ const Navbar = () => {
     return (
         <nav className="h-16 sticky top-0 px-6 z-50 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/50">
             {/* Left Section */}
-            <div className="flex items-center gap-3">
+            <div
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
+            >
                 <div className="bg-gradient-to-br from-primary to-primary-light p-2 rounded-lg shadow-lg shadow-primary/20">
                     <GraduationCap size={24} className="text-white" />
                 </div>
-                <h1 className="text-lg font-bold text-white tracking-tight hidden sm:block">Student Support Portal</h1>
+                <h1 className="text-lg font-bold text-white tracking-tight hidden sm:block">
+                    {user?.role === 'admin' ? 'Admin Portal' : 'Student Support Portal'}
+                </h1>
             </div>
 
             {/* Right Section */}

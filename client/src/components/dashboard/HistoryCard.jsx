@@ -1,14 +1,58 @@
+import { useState, useMemo } from "react";
 import { clsx } from "clsx";
 
 const HistoryCard = ({ issues = [] }) => {
+    const [filter, setFilter] = useState('all'); // 'all', 'active', 'resolved'
+
+    const filteredIssues = useMemo(() => {
+        if (filter === 'all') return issues;
+        if (filter === 'active') {
+            return issues.filter(i => ['submitted', 'in_review', 'in_progress'].includes(i.status));
+        }
+        if (filter === 'resolved') {
+            return issues.filter(i => ['resolved', 'closed'].includes(i.status));
+        }
+        return issues;
+    }, [issues, filter]);
+
     return (
-        <div className="glass-panel rounded-2xl overflow-hidden flex flex-col h-full min-h-[400px]">
+        <div className="glass-panel rounded-2xl overflow-hidden flex flex-col h-[600px]">
             {/* Header */}
             <div className="p-6 border-b border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex bg-white/5 p-1 rounded-lg gap-1">
-                    <button className="px-4 py-1.5 text-xs font-semibold text-white bg-primary/20 rounded-md shadow-sm border border-primary/20 transition-all">All</button>
-                    <button className="px-4 py-1.5 text-xs font-semibold text-text-tertiary hover:text-white transition-colors">Active</button>
-                    <button className="px-4 py-1.5 text-xs font-semibold text-text-tertiary hover:text-white transition-colors">Resolved</button>
+                    <button
+                        onClick={() => setFilter('all')}
+                        className={clsx(
+                            "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                            filter === 'all'
+                                ? "text-white bg-primary/20 shadow-sm border border-primary/20"
+                                : "text-text-tertiary hover:text-white"
+                        )}
+                    >
+                        All
+                    </button>
+                    <button
+                        onClick={() => setFilter('active')}
+                        className={clsx(
+                            "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
+                            filter === 'active'
+                                ? "text-white bg-primary/20 shadow-sm border border-primary/20"
+                                : "text-text-tertiary hover:text-white"
+                        )}
+                    >
+                        Active
+                    </button>
+                    <button
+                        onClick={() => setFilter('resolved')}
+                        className={clsx(
+                            "px-4 py-1.5 text-xs font-semibold rounded-md transition-colors",
+                            filter === 'resolved'
+                                ? "text-white bg-primary/20 shadow-sm border border-primary/20"
+                                : "text-text-tertiary hover:text-white"
+                        )}
+                    >
+                        Resolved
+                    </button>
                 </div>
             </div>
 
@@ -22,12 +66,12 @@ const HistoryCard = ({ issues = [] }) => {
 
             {/* Table Body */}
             <div className="divide-y divide-border/30 flex-1 overflow-y-auto custom-scrollbar">
-                {issues.length === 0 ? (
+                {filteredIssues.length === 0 ? (
                     <div className="p-12 text-center text-text-muted text-sm flex flex-col items-center justify-center h-full">
-                        <p>No recent history found.</p>
+                        <p>No {filter !== 'all' ? filter : ''} history found.</p>
                     </div>
                 ) : (
-                    issues.map((issue) => (
+                    filteredIssues.map((issue) => (
                         <div key={issue.id} className="grid sm:grid-cols-12 gap-4 px-6 py-4 hover:bg-white/5 transition-colors cursor-pointer items-center group">
                             <div className="col-span-2">
                                 <span className="text-sm font-mono font-medium text-primary-light group-hover:text-primary transition-colors">#{issue.issue_number || issue.id}</span>
@@ -46,12 +90,7 @@ const HistoryCard = ({ issues = [] }) => {
                 )}
             </div>
 
-            {/* Footer */}
-            <div className="mt-auto border-t border-border/50 p-4 text-center bg-white/2">
-                <button className="text-sm text-primary-light font-medium hover:text-white transition-colors">
-                    View Full History
-                </button>
-            </div>
+
         </div>
     );
 };

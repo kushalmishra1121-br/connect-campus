@@ -37,12 +37,13 @@ exports.createIssue = async (req, res) => {
                 creator: { connect: { id: userId } },
                 // Initially submitted, update helps track this
                 status: 'submitted',
-                // Add attachment if image_url exists
                 attachments: image_url ? {
                     create: {
                         file_url: image_url,
-                        file_type: 'image',
-                        file_name: 'issue_image'
+                        mime_type: 'image/jpeg', // Defaulting since we don't have this info from frontend yet
+                        file_name: 'issue_image.jpg',
+                        file_size: 0, // Defaulting as placeholder
+                        uploader: { connect: { id: userId } }
                     }
                 } : undefined
             }

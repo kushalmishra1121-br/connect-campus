@@ -1,0 +1,10 @@
+node_modules
+.env
+.DS_Store
+dist
+build
+coverage
+.vscode
+server/check_issues.js
+server/fix_roles.js
+server/test_admin_draft.js

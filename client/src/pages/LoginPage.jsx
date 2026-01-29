@@ -9,8 +9,18 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, logout } = useAuth(); // Need logout to clear state if role mismatch
+    const { login, logout, user } = useAuth(); // Need user to check if already logged in
     const navigate = useNavigate();
+
+    // Redirect if already logged in
+    // This handles cases where user refreshes or manually visits /login
+    if (user) {
+        if (user.role === 'admin') {
+            navigate('/admin');
+        } else {
+            navigate('/dashboard');
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -35,7 +45,12 @@ const LoginPage = () => {
                 // For smooth UX, let's just allow it but redirect to admin dashboard if they are actually admin.
             }
 
-            navigate('/dashboard');
+            if (data.user.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/dashboard');
+            }
+
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to login');
         } finally {

@@ -13,6 +13,7 @@ const AdminDashboard = () => {
     const [issues, setIssues] = useState([]);
     const [issuesLoading, setIssuesLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [error, setError] = useState(null); // Add error state
 
     // Users State
     const [users, setUsers] = useState([]);
@@ -22,10 +23,13 @@ const AdminDashboard = () => {
     const fetchIssues = async () => {
         try {
             setIssuesLoading(true);
+            setError(null); // Clear previous errors
             const res = await api.get('/admin/issues' + (filter !== 'all' ? `?status=${filter}` : ''));
+            console.log("Admin Issues Response:", res.data); // Log response
             setIssues(res.data.issues);
         } catch (error) {
             console.error("Failed to fetch admin issues", error);
+            setError("Failed to load issues: " + (error.response?.data?.message || error.message)); // Set error message
         } finally {
             setIssuesLoading(false);
         }
@@ -134,6 +138,8 @@ const AdminDashboard = () => {
                                     <tbody className="divide-y divide-white/5">
                                         {issuesLoading ? (
                                             <tr><td colSpan="8" className="p-8 text-center text-text-muted">Loading issues...</td></tr>
+                                        ) : error ? (
+                                            <tr><td colSpan="8" className="p-8 text-center text-status-error bg-status-error/10 font-medium">{error}</td></tr>
                                         ) : issues.length === 0 ? (
                                             <tr><td colSpan="8" className="p-8 text-center text-text-muted">No issues found.</td></tr>
                                         ) : (
