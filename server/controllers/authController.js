@@ -236,3 +236,159 @@ exports.resetPassword = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+// Firebase Login - Sync Firebase user with our database
+exports.firebaseLogin = async (req, res) => {
+    try {
+        const { firebase_uid, email, full_name } = req.body;
+
+        if (!firebase_uid || !email) {
+            return res.status(400).json({ success: false, message: 'Missing Firebase credentials' });
+        }
+
+        // Try to find existing user by firebase_uid or email
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { firebase_uid },
+                    { email }
+                ]
+            }
+        });
+
+        if (user) {
+            // Update firebase_uid if not set
+            if (!user.firebase_uid) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: { firebase_uid }
+                });
+            }
+
+            const token = generateToken(user.id);
+            return res.json({
+                success: true,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.full_name,
+                    role: user.role,
+                    student_id: user.student_id,
+                    avatar_url: user.avatar_url
+                },
+                token
+            });
+        }
+
+        // User doesn't exist - create new one (for Google Sign-In)
+        if (full_name) {
+            user = await prisma.user.create({
+                data: {
+                    firebase_uid,
+                    email,
+                    full_name,
+                    password_hash: 'firebase_auth', // Placeholder since Firebase handles auth
+                    role: 'student'
+                }
+            });
+
+            const token = generateToken(user.id);
+            return res.json({
+                success: true,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.full_name,
+                    role: user.role,
+                    student_id: user.student_id
+                },
+                token
+            });
+        }
+
+        return res.status(404).json({ success: false, message: 'User not found. Please register first.' });
+
+    } catch (error) {
+        console.error('Firebase Login Error:', error);
+        res.status(500).json({ success: false, message: 'Server error during Firebase login' });
+    }
+};
+
+// Firebase Register - Create user in our database after Firebase signup
+exports.firebaseRegister = async (req, res) => {
+    try {
+        const { firebase_uid, email, full_name, student_id, role = 'student', admin_secret } = req.body;
+
+        if (!firebase_uid || !email || !full_name) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        // Security check for Admin registration
+        if (role === 'admin') {
+            if (admin_secret !== process.env.ADMIN_SECRET) {
+                return res.status(403).json({ success: false, message: 'Invalid Admin Secret Key' });
+            }
+        }
+
+        // Check if student_id exists (if provided)
+        if (student_id) {
+            const existingStudentId = await prisma.user.findUnique({ where: { student_id } });
+            if (existingStudentId) {
+                return res.status(400).json({ success: false, message: 'Student ID already registered' });
+            }
+        }
+
+        // Check if user already exists
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { firebase_uid },
+                    { email }
+                ]
+            }
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'User already exists' });
+        }
+
+        // Create user
+        const user = await prisma.user.create({
+            data: {
+                firebase_uid,
+                email,
+                full_name,
+                student_id,
+                role,
+                password_hash: 'firebase_auth' // Placeholder
+            }
+        });
+
+        const token = generateToken(user.id);
+
+        res.status(201).json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role,
+                student_id: user.student_id
+            },
+            token
+        });
+
+    } catch (error) {
+        console.error('Firebase Register Error:', error);
+
+        if (error.code === 'P2002') {
+            const field = error.meta?.target?.[0];
+            return res.status(400).json({
+                success: false,
+                message: `${field ? field.replace('_', ' ') : 'Field'} already exists`
+            });
+        }
+
+        res.status(500).json({ success: false, message: 'Server error during registration' });
+    }
+};

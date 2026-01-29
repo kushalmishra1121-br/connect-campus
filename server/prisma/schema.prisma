@@ -13,6 +13,7 @@ model User {
   password_hash String
   full_name     String
   student_id    String?        @unique
+  firebase_uid  String?        @unique
   role          UserRole
   avatar_url    String?
   is_active     Boolean        @default(true)

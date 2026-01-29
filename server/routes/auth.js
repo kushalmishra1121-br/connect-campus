@@ -9,4 +9,8 @@ router.get('/me', requireAuth, getMe);
 router.post('/forgot-password', require('../controllers/authController').forgotPassword);
 router.post('/reset-password', require('../controllers/authController').resetPassword);
 
+// Firebase Auth Routes
+router.post('/firebase-login', require('../controllers/authController').firebaseLogin);
+router.post('/firebase-register', require('../controllers/authController').firebaseRegister);
+
 module.exports = router;
